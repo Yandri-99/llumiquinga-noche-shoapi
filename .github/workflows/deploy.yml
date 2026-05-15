@@ -56,7 +56,8 @@ jobs:
           DB_PORT:       5432
           TEST_DB_NAME:  shopapi_test_db
           CORS_ALLOW_ALL_ORIGINS: True
-        run: uv run python manage.py test store --verbosity=2
+        # Se añade --noinput para evitar que el runner se bloquee al encontrar la DB existente
+        run: uv run python manage.py test store --verbosity=2 --noinput
 
   # ── Job 2: Deploy ─────────────────────────────────────────
   deploy:

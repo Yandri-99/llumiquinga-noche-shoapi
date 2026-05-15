@@ -18,7 +18,7 @@ jobs:
       postgres:
         image: postgres:16
         env:
-          POSTGRES_DB:       shopapi_test_db
+          POSTGRES_DB:       shopapi_db
           POSTGRES_USER:     shopapi_user
           POSTGRES_PASSWORD: shopapi_pass
         options: >-

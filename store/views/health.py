@@ -12,4 +12,4 @@ def health_check(request):
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def health_check_cicd(request):
-    return Response({'service': 'shopapi', 'status': 'ok', 'version': '1.0'})
+    return Response({'service': 'shopapi', 'status': 'ok', 'version': '1.0', 'message': 'CI/CD Successfully'})

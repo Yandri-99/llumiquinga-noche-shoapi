@@ -104,6 +104,7 @@ jobs:
             echo "── 1. Entrando al proyecto ──"
             cd $DEPLOY_PATH
 
+            git config --global --add safe.directory $DEPLOY_PATH
 
             echo "── 2. Verificando repo git ──"
             pwd

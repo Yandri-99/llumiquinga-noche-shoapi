@@ -20,7 +20,7 @@ jobs:
         env:
           POSTGRES_DB:       shopapi_test_db
           POSTGRES_USER:     shopapi_user
-          POSTGRES_PASSWORD: shopapi_pass_123
+          POSTGRES_PASSWORD: shopapi_pass
         options: >-
           --health-cmd pg_isready
           --health-interval 10s

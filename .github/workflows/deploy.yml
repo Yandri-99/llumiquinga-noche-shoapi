@@ -18,7 +18,7 @@ jobs:
       postgres:
         image: postgres:16
         env:
-          POSTGRES_DB:       shopapi_db
+          POSTGRES_DB:       shopapi_test_db
           POSTGRES_USER:     shopapi_user
           POSTGRES_PASSWORD: shopapi_pass
         options: >-
@@ -56,7 +56,7 @@ jobs:
           DB_PORT:       5432
           TEST_DB_NAME:  shopapi_test_db
           CORS_ALLOW_ALL_ORIGINS: True
-        # Se añade --noinput para evitar que el runner se bloquee al encontrar la DB existente
+        # Se añadió --noinput para que no pida confirmación al borrar la DB de prueba
         run: uv run python manage.py test store --verbosity=2 --noinput
 
   # ── Job 2: Deploy ─────────────────────────────────────────
@@ -83,10 +83,11 @@ jobs:
           VPS_USER:    ${{ secrets.VPS_USERNAME }}
           DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
         run: |
-          ssh $VPS_USER@$VPS_HOST << 'ENDSSH'
+          # 🔴 CAMBIO CLAVE: Se usa ENDSSH sin comillas para que $DEPLOY_PATH funcione
+          ssh $VPS_USER@$VPS_HOST << ENDSSH
             set -e
 
-            echo "── 1. Actualizando código ──"
+            echo "── 1. Actualizando código en $DEPLOY_PATH ──"
             cd $DEPLOY_PATH
             git fetch origin
             git reset --hard origin/main

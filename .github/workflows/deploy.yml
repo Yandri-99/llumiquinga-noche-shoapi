@@ -1,24 +1,28 @@
 # .github/workflows/deploy.yml
 name: ShopAPI — CI/CD Pipeline
 
+
 on:
   push:
     branches: [ main, master ]
   pull_request:
     branches: [ main, master ]
 
+
 jobs:
+
 
   # ── Job 1: Tests ──────────────────────────────────────────
   test:
     name: Run Tests
     runs-on: ubuntu-latest
 
+
     services:
       postgres:
         image: postgres:16
         env:
-          POSTGRES_DB:       shopapi_test_db
+          POSTGRES_DB:       shopapi_db
           POSTGRES_USER:     shopapi_user
           POSTGRES_PASSWORD: shopapi_pass
         options: >-
@@ -29,35 +33,40 @@ jobs:
         ports:
           - 5432:5432
 
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
 
       - name: Install uv
         uses: astral-sh/setup-uv@v3
         with:
           version: "latest"
 
+
       - name: Set up Python
         run: uv python install 3.12
 
+
       - name: Install dependencies
         run: uv sync
+
 
       - name: Run tests
         env:
           SECRET_KEY:    test-secret-key-for-ci-only
           DEBUG:         True
           ALLOWED_HOSTS: localhost,127.0.0.1
-          DB_NAME:       shopapi_test_db
+          DB_NAME:       shopapi_db
           DB_USER:       shopapi_user
           DB_PASSWORD:   shopapi_pass
           DB_HOST:       localhost
           DB_PORT:       5432
           TEST_DB_NAME:  shopapi_test_db
           CORS_ALLOW_ALL_ORIGINS: True
-        # Se añadió --noinput para que no pida confirmación al borrar la DB de prueba
-        run: uv run python manage.py test store --verbosity=2 --noinput
+        run: uv run python manage.py test store --verbosity=2
+
 
   # ── Job 2: Deploy ─────────────────────────────────────────
   deploy:
@@ -66,9 +75,11 @@ jobs:
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
 
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
 
       - name: Setup SSH
         run: |
@@ -77,37 +88,60 @@ jobs:
           chmod 600 ~/.ssh/id_ed25519
           ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
 
+
       - name: Deploy to VM
         env:
           VPS_HOST:    ${{ secrets.VPS_HOST }}
           VPS_USER:    ${{ secrets.VPS_USERNAME }}
           DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+
+
         run: |
-          # 🔴 CAMBIO CLAVE: Se usa ENDSSH sin comillas para que $DEPLOY_PATH funcione
           ssh $VPS_USER@$VPS_HOST << ENDSSH
             set -e
 
-            echo "── 1. Actualizando código en $DEPLOY_PATH ──"
+
+            echo "── 1. Entrando al proyecto ──"
             cd $DEPLOY_PATH
+
+
+            echo "── 2. Verificando repo git ──"
+            pwd
+            ls -la
+
+
+            if [ ! -d ".git" ]; then
+              echo "Repositorio no encontrado"
+              exit 1
+            fi
+
+
+            echo "── 3. Actualizando código ──"
             git fetch origin
             git reset --hard origin/main
 
-            echo "── 2. Instalando dependencias ──"
+
+            echo "── 4. Instalando dependencias ──"
             uv sync --frozen
 
-            echo "── 3. Aplicando migraciones ──"
+
+            echo "── 5. Aplicando migraciones ──"
             uv run python manage.py migrate --noinput
 
-            echo "── 4. Recolectando estáticos ──"
+
+            echo "── 6. Recolectando estáticos ──"
             uv run python manage.py collectstatic --noinput --clear
 
-            echo "── 5. Reiniciando servicios ──"
+
+            echo "── 7. Reiniciando servicios ──"
             sudo systemctl restart gunicorn-shopapi
             sudo systemctl restart nginx
 
-            echo "── 6. Verificando salud de la API ──"
-            sleep 3
-            curl -sf http://127.0.0.1/api/health/ && echo "API OK" || echo "API ERROR"
 
-            echo "Despliegue completado exitosamente"
+            echo "── 8. Healthcheck ──"
+            sleep 3
+            curl -sf http://127.0.0.1/api/health/ && echo "API OK"
+
+
+            echo "Deploy completado"
           ENDSSH

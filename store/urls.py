@@ -3,7 +3,7 @@ from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from rest_framework_simplejwt.views import TokenRefreshView, TokenVerifyView
 
-from store.views.health    import health_check
+from store.views.health    import health_check, health_check_cicd
 from store.views.auth      import RegisterView, LogoutView
 from store.views.user      import UserViewSet
 from store.views.category  import CategoryViewSet
@@ -19,6 +19,7 @@ router.register('orders',     OrderViewSet,    basename='order')
 
 urlpatterns = [
     path('health/',             health_check),
+    path('health/cicd/',        health_check_cicd),
     path('auth/register/',      RegisterView.as_view()),
     path('auth/login/',         CustomTokenView.as_view()),
     path('auth/token/refresh/', TokenRefreshView.as_view()),
